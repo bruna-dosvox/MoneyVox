@@ -39,14 +39,14 @@ procedure ajudaOpcoes;
 begin
     writeln;
 
-    mensagem ('MOESCFOL',  1);
-    mensagem ('MOCONFFOL', 1);
-    mensagem ('MOEVFOL',   1);
-    mensagem ('MOFOLFOL',  1);
-    mensagem ('MOEMITREL', 1);
-    mensagem ('MOCONTEV',  1);
-    mensagem ('MOIEAFOL',  1);
-    mensagem ('MOTERMINAR',1);
+    mensagem ('MOESCFOL',   1);    {'E - Escolher folha de lançamento para trabalho'}
+    mensagem ('MOCONFFOL',  1);    {'C - Configurar folha de lançamento'}
+    mensagem ('MOEVFOL',    1);    {'L - Lançar evento numa folha'}
+    mensagem ('MOFOLFOL',   1);    {'F - Folhear uma folha de lançamento'}
+    mensagem ('MOEMITREL',  1);    {'R - Emitir relatório'}
+    mensagem ('MOCONTEV',   1);    {'V - Controlar eventos futuros'}
+    mensagem ('MOIEAFOL',   1);    {'I - Importar/exportar/arquivar folhas'}
+    mensagem ('MOTERMINAR', 1);    {'ESC - terminar' }
 
     while keypressed do
         opcaoSel := upcase(readkey);
@@ -65,17 +65,23 @@ var
     index: integer;
 const
     tabLetrasOpcao: string = 'ECLFRVI' + ESC;
+
+    procedure MenuAdiciona (msg: string);
+    begin
+         popupMenuAdiciona (msg, pegaTextoMensagem (msg));
+    end;
+
 begin
     garanteEspacoTela (9);
     popupMenuCria (wherex, wherey+1, 80, length(tabLetrasOpcao), BLUE);
-    popupMenuAdiciona ('MOESCFOL',  'E - Escolher folha de lançamento para trabalho');
-    popupMenuAdiciona ('MOCONFFOL', 'C - Configurar folha de lançamento');
-    popupMenuAdiciona ('MOEVFOL',   'L - Lançar evento numa folha');
-    popupMenuAdiciona ('MOFOLFOL',  'F - Folhear uma folha de lançamento');
-    popupMenuAdiciona ('MOEMITREL', 'R - Emitir relatório');
-    popupMenuAdiciona ('MOCONTEV',  'V - Controlar eventos futuros');
-    popupMenuAdiciona ('MOIEAFOL',  'I - Importar/exportar/arquivar folhas');
-    popupMenuAdiciona ('MOTERMINAR','ESC - terminar' );
+    menuAdiciona ('MOESCFOL');     {'E - Escolher folha de lançamento para trabalho'}
+    menuAdiciona ('MOCONFFOL');    {'C - Configurar folha de lançamento'}
+    menuAdiciona ('MOEVFOL');      {'L - Lançar evento numa folha'}
+    menuAdiciona ('MOFOLFOL');     {'F - Folhear uma folha de lançamento'}
+    menuAdiciona ('MOEMITREL');    {'R - Emitir relatório'}
+    menuAdiciona ('MOCONTEV');     {'V - Controlar eventos futuros'}
+    menuAdiciona ('MOIEAFOL');     {'I - Importar/exportar/arquivar folhas'}
+    menuAdiciona ('MOTERMINAR');   {'ESC - terminar' }
 
     index := popupMenuSeleciona;
     if index > 0 then
@@ -88,22 +94,25 @@ begin
 end;
 
 {--------------------------------------------------------}
-{          Faz o processo da ferramenta moneyVox         }
+{              Pede opção e trata ajudas                 }
 {--------------------------------------------------------}
 
-procedure processa;
-var
-    c, c2: char;
-    opcao: String;
+function pedeOpcao: char;
 begin
-    textBackground (RED);
-    opcaoSel := #0;
-    mensagem('MOOQUE', 0); {MoneyVox - Que deseja? }
+    repeat
+        limpaBaixo (5);
+        textBackground (RED);
+        opcaoSel := #0;
+        mensagem('MOOQUE', 0); {MoneyVox - Que deseja? }
 
-    textBackground (BLACK);
-    sintLeTecla (c, c2);
-    opcao := '';
-    if (c = #0) and ((c2 = CIMA) or (c2 = BAIX)) then
+        textBackground (BLACK);
+        sintLeTecla (c, c2);
+        opcao := '';
+        if (c = #0) and (c2 = F1) then
+            ajudaOpcoes;
+    until c2 <> F1;
+
+    if (c = #0) and ((c2 = F9) or (c2 = CIMA) or (c2 = BAIX)) then
         begin
             c := selSetasOpcao;
             if c <> #$1b then
@@ -114,12 +123,54 @@ begin
         end
     else
     if c = ESC then
-        writeln
-    else
-    if (c = #0) and (c2 = F9) then
-        ajudaOpcoes
+        begin
+            writeln;
+            opcaoSel := c;
+        end;
     else
         opcaoSel := upcase(c);
+
+    result := opcaoSel;
 end;
 
-end.
+{--------------------------------------------------------}
+{          Faz o processo da ferramenta moneyVox         }
+{--------------------------------------------------------}
+
+procedure processa;
+var
+    c, c2: char;
+    opcao: String;
+    processando: boolean;
+begin
+    processando := true;
+    while processando do
+        begin
+            opcaoSel := pedeOpcao;
+            case opcaoSel of
+                 'N': naoImplem ('criar nova folha de lançamento');
+                 'E': naoImplem ('escolher folha de lançamento');
+                 'C': naoImplem ('configurar folha de lançamento');
+                 'L': naoImplem ('lançar evento numa folha');
+                 'F': naoImplem ('folhear uma folha de lançamento');
+                 'R': naoImplem ('emitir relatório');
+                 'V': naoImplem ('controlar eventos futuros');
+                 'I': naoImplem ('importar/exportar/arquivar folhas');
+
+                 ESC:
+                     begin
+                         mensagem('MOCNFFIM', 0); {Confirma o fim do MoneyVox (S/N)?}
+                         if popupMenuPorLetra('SN') = 'S' then
+                             processando := false;
+                     end;
+
+            else
+                 textBackground (MAGENTA);
+                 mensagem ('MOOPINV', 0); {opção inválida}
+                 textBackground (BLACK);
+                 clrscr;
+             end;
+
+        end;
+
+end;
